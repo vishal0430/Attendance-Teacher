@@ -1,6 +1,7 @@
 package com.vv.attendanceteacher.ui.ui.gallery;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -16,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.JsonArray;
+import com.vv.attendanceteacher.MainActivity;
 import com.vv.attendanceteacher.RetrofitClient;
 import com.vv.attendanceteacher.adapter.TakeAttendanceAdapter;
 import com.vv.attendanceteacher.databinding.FragmentGalleryBinding;
@@ -37,7 +40,9 @@ import com.vv.attendanceteacher.models.ShowAttendanceModel;
 import com.vv.attendanceteacher.models.SubjectModel;
 import com.vv.attendanceteacher.ui.HomeActivity;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import retrofit2.Call;
@@ -48,6 +53,8 @@ import org.json.JSONArray;
 import org.w3c.dom.Text;
 
 import java.util.Arrays;
+import java.util.Locale;
+
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class GalleryFragment extends Fragment {
@@ -60,6 +67,7 @@ public class GalleryFragment extends Fragment {
     String divisonId;
     String subjectId;
     Boolean updateAttendance = false;
+    final Calendar myCalendar= Calendar.getInstance();
 
     CountDownTimer countDownTimer;
     RecyclerView recyclerView;
@@ -79,6 +87,8 @@ public class GalleryFragment extends Fragment {
         final Button scanDevices = binding.scanDevices;
         final Button takeAttendance = binding.takeAttendance;
         final TextView status = binding.status;
+        final TextView selectDate = binding.selectDate;
+        final TextView displayDate = binding.displayDate;
 
         updateAttendance = false;
 
@@ -91,17 +101,39 @@ public class GalleryFragment extends Fragment {
 
         takeAttendance.setEnabled(false);
 
+        DatePickerDialog.OnDateSetListener date =new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int month, int day) {
+                myCalendar.set(Calendar.YEAR, year);
+                myCalendar.set(Calendar.MONTH,month);
+                myCalendar.set(Calendar.DAY_OF_MONTH,day);
+                String myFormat="yyyy-MM-dd";
+                SimpleDateFormat dateFormat=new SimpleDateFormat(myFormat, Locale.US);
+                displayDate.setText(dateFormat.format(myCalendar.getTime()));
+            }
+        };
+        selectDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                fallbackData();
+                new DatePickerDialog(getContext(),date,myCalendar.get(Calendar.YEAR),myCalendar.get(Calendar.MONTH),myCalendar.get(Calendar.DAY_OF_MONTH)).show();
+            }
+        });
+
         scanDevices.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onClick(View view) {
-                if(mBluetoothAdapter==null)
-                    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                if(!mBluetoothAdapter.isDiscovering()){
-                    IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-                    getContext().registerReceiver(receiver, filter);
-                    mBluetoothAdapter.startDiscovery();
-                }
+                if(!displayDate.getText().toString().isEmpty()) {
+                    if (mBluetoothAdapter == null)
+                        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                    if (!mBluetoothAdapter.isDiscovering()) {
+                        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+                        getContext().registerReceiver(receiver, filter);
+                        mBluetoothAdapter.startDiscovery();
+                    }
+                }else
+                    Toast.makeText(getContext(), "Select Date", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -111,55 +143,62 @@ public class GalleryFragment extends Fragment {
             public void onClick(View view) {
                 /// Upload Data
                 if(!mBluetoothAdapter.isDiscovering()) {
-                    if(updateAttendance){
-                        for (ShowAttendanceModel showAttendanceModel:
-                             takeAttendanceAdapter.getList()) {
-                            if(showAttendanceModel.getStatus().equals("1")){
-                                rollNos.add(showAttendanceModel.getAdmissionNumber());
+                    if(!displayDate.getText().toString().isEmpty()) {
+                        if (updateAttendance) {
+                            rollNos.clear();
+                            for (ShowAttendanceModel showAttendanceModel :
+                                    takeAttendanceAdapter.getList()) {
+                                if (showAttendanceModel.getStatus().equals("1")) {
+                                    rollNos.add(showAttendanceModel.getAdmissionNumber());
+                                }
                             }
+                            Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().updateAttendance(classId, divisonId, displayDate.getText().toString(), subjectId, new JSONArray(rollNos));
+                            call.enqueue(new Callback<AttendanceStatusModel>() {
+                                @Override
+                                public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
+                                    Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+
+                                @Override
+                                public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
+                                    Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        } else {
+                            Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().takeAttendance(classId, divisonId, displayDate.getText().toString(), subjectId, new JSONArray(bluetoothIds));
+                            Toast.makeText(getContext(), bluetoothIds.toString(), Toast.LENGTH_SHORT).show();
+                            call.enqueue(new Callback<AttendanceStatusModel>() {
+                                @Override
+                                public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
+                                    Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                    Call<List<ShowAttendanceModel>> showAttendanceModelCall = RetrofitClient.getInstance().getMyApi().showAttendance(classId, divisonId, displayDate.getText().toString(), subjectId);
+                                    showAttendanceModelCall.enqueue(new Callback<List<ShowAttendanceModel>>() {
+                                        @Override
+                                        public void onResponse(Call<List<ShowAttendanceModel>> call, Response<List<ShowAttendanceModel>> response) {
+                                            List<ShowAttendanceModel> showAttendanceModel = response.body();
+                                            updateAttendance = true;
+                                            binding.takeAttendance.setText("Update Attendance");
+                                            status.setVisibility(View.VISIBLE);
+                                            takeAttendanceAdapter = new TakeAttendanceAdapter(showAttendanceModel);
+                                            recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+                                            recyclerView.setAdapter(takeAttendanceAdapter);
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<ShowAttendanceModel>> call, Throwable t) {
+                                            Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
+                                    Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         }
-                        Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().updateAttendance(classId,divisonId,"2022-06-05",subjectId,new JSONArray(Arrays.asList(rollNos)));
-                        call.enqueue(new Callback<AttendanceStatusModel>() {
-                            @Override
-                            public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
-                                Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-
-                            @Override
-                            public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
-                                Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }else {
-                        Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().takeAttendance(classId, divisonId, "2022-06-05", subjectId, new JSONArray(Arrays.asList(bluetoothIds)));
-                        call.enqueue(new Callback<AttendanceStatusModel>() {
-                            @Override
-                            public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
-                                Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                                Call<List<ShowAttendanceModel>> showAttendanceModelCall = RetrofitClient.getInstance().getMyApi().showAttendance(classId, divisonId, "2022-06-05", subjectId);
-                                showAttendanceModelCall.enqueue(new Callback<List<ShowAttendanceModel>>() {
-                                    @Override
-                                    public void onResponse(Call<List<ShowAttendanceModel>> call, Response<List<ShowAttendanceModel>> response) {
-                                        List<ShowAttendanceModel> showAttendanceModel = response.body();
-                                        status.setVisibility(View.VISIBLE);
-                                        takeAttendanceAdapter = new TakeAttendanceAdapter(showAttendanceModel);
-                                        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-                                        recyclerView.setAdapter(takeAttendanceAdapter);
-                                    }
-
-                                    @Override
-                                    public void onFailure(Call<List<ShowAttendanceModel>> call, Throwable t) {
-                                        Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
-                                Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
+                    }else
+                        Toast.makeText(getContext(), "Select Date", Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(getContext(), "Please Wait for Scanning to Complete !!", Toast.LENGTH_SHORT).show();
                 }
@@ -269,6 +308,8 @@ public class GalleryFragment extends Fragment {
         binding.status.setVisibility(View.INVISIBLE);
         binding.takeAttendance.setEnabled(false);
         bluetoothIds.clear();
+        rollNos.clear();
+        updateAttendance = false;
         if(takeAttendanceAdapter!=null) takeAttendanceAdapter.clearAll();
         if(countDownTimer!=null) countDownTimer.cancel();
         if(mBluetoothAdapter!=null && mBluetoothAdapter.isDiscovering())

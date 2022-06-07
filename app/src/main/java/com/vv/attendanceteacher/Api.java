@@ -6,6 +6,7 @@ import com.vv.attendanceteacher.models.DivisonDropDown;
 import com.vv.attendanceteacher.models.LoginModel;
 import com.vv.attendanceteacher.models.ShowAttendanceModel;
 import com.vv.attendanceteacher.models.SubjectModel;
+import com.vv.attendanceteacher.models.TeacherDetailsModel;
 
 import org.json.JSONArray;
 
@@ -23,9 +24,12 @@ import retrofit2.http.Query;
 public interface Api {
 
     String BASE_URL = "http://3.110.3.252/Api/android_api.php/";
+
     @GET("?teacherlogin")
     Call<LoginModel> loginTeacher(@Query("email") String email, @Query("pass") String password);
 
+    @GET("?teacherdetails")
+    Call<TeacherDetailsModel> getTeacherDetails(@Query("teacherid") String teacherId);
 
     @GET("?class")
     Call<List<ClassDropdown>> getClassDropDown(@Query("teacher_id") String teacherId);
