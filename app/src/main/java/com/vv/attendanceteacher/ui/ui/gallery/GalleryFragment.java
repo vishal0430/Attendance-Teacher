@@ -23,13 +23,17 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.JsonArray;
 import com.vv.attendanceteacher.RetrofitClient;
+import com.vv.attendanceteacher.adapter.TakeAttendanceAdapter;
 import com.vv.attendanceteacher.databinding.FragmentGalleryBinding;
 import com.vv.attendanceteacher.models.AttendanceStatusModel;
 import com.vv.attendanceteacher.models.ClassDropdown;
 import com.vv.attendanceteacher.models.DivisonDropDown;
+import com.vv.attendanceteacher.models.ShowAttendanceModel;
 import com.vv.attendanceteacher.models.SubjectModel;
 import com.vv.attendanceteacher.ui.HomeActivity;
 
@@ -41,20 +45,25 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import org.json.JSONArray;
+import org.w3c.dom.Text;
+
 import java.util.Arrays;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class GalleryFragment extends Fragment {
 
     private FragmentGalleryBinding binding;
-    int i=1;
-    String temp="";
     ArrayList<String> bluetoothIds = new ArrayList<>();
-    Boolean scannedDevices = false;
+    ArrayList<String> rollNos = new ArrayList<>();
     BluetoothAdapter mBluetoothAdapter;
     String classId;
     String divisonId;
     String subjectId;
+    Boolean updateAttendance = false;
+
+    CountDownTimer countDownTimer;
+    RecyclerView recyclerView;
+    TakeAttendanceAdapter takeAttendanceAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -63,42 +72,96 @@ public class GalleryFragment extends Fragment {
 
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
-        scannedDevices = false;
 
         final Spinner spinnerClass = binding.spinnerClass;
         final Spinner spinnerDivision = binding.spinnerDivision;
         final Spinner spinnerSubjects = binding.spinnerSubject;
         final Button scanDevices = binding.scanDevices;
-        final TextView b = binding.bluetoothId;
+        final Button takeAttendance = binding.takeAttendance;
+        final TextView status = binding.status;
+
+        updateAttendance = false;
+
+        status.setVisibility(View.INVISIBLE);
         scanDevices.setText("Scan Devices");
+        takeAttendance.setText("Mark Attendance");
         scanDevices.setEnabled(false);
+
+        recyclerView = (RecyclerView) binding.recyclerView;
+
+        takeAttendance.setEnabled(false);
 
         scanDevices.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onClick(View view) {
-                if(scannedDevices){
-                    /// Upload Data
-                    Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().takeAttendance(classId,divisonId,"2022-06-08",subjectId, new JSONArray(Arrays.asList(bluetoothIds)));
-                    call.enqueue(new Callback<AttendanceStatusModel>() {
-                        @Override
-                        public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
-                            Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-
-                        @Override
-                        public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
-                            Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-                else {
+                if(mBluetoothAdapter==null)
+                    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                if(!mBluetoothAdapter.isDiscovering()){
                     IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                     getContext().registerReceiver(receiver, filter);
-                    i = 1;
-                    temp = "";
-                    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
                     mBluetoothAdapter.startDiscovery();
+                }
+            }
+        });
+
+        takeAttendance.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View view) {
+                /// Upload Data
+                if(!mBluetoothAdapter.isDiscovering()) {
+                    if(updateAttendance){
+                        for (ShowAttendanceModel showAttendanceModel:
+                             takeAttendanceAdapter.getList()) {
+                            if(showAttendanceModel.getStatus().equals("1")){
+                                rollNos.add(showAttendanceModel.getAdmissionNumber());
+                            }
+                        }
+                        Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().updateAttendance(classId,divisonId,"2022-06-05",subjectId,new JSONArray(Arrays.asList(rollNos)));
+                        call.enqueue(new Callback<AttendanceStatusModel>() {
+                            @Override
+                            public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
+                                Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
+                                Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }else {
+                        Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().takeAttendance(classId, divisonId, "2022-06-05", subjectId, new JSONArray(Arrays.asList(bluetoothIds)));
+                        call.enqueue(new Callback<AttendanceStatusModel>() {
+                            @Override
+                            public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
+                                Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                Call<List<ShowAttendanceModel>> showAttendanceModelCall = RetrofitClient.getInstance().getMyApi().showAttendance(classId, divisonId, "2022-06-05", subjectId);
+                                showAttendanceModelCall.enqueue(new Callback<List<ShowAttendanceModel>>() {
+                                    @Override
+                                    public void onResponse(Call<List<ShowAttendanceModel>> call, Response<List<ShowAttendanceModel>> response) {
+                                        List<ShowAttendanceModel> showAttendanceModel = response.body();
+                                        status.setVisibility(View.VISIBLE);
+                                        takeAttendanceAdapter = new TakeAttendanceAdapter(showAttendanceModel);
+                                        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+                                        recyclerView.setAdapter(takeAttendanceAdapter);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<List<ShowAttendanceModel>> call, Throwable t) {
+                                        Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
+                                Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }else{
+                    Toast.makeText(getContext(), "Please Wait for Scanning to Complete !!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -119,6 +182,7 @@ public class GalleryFragment extends Fragment {
                     @Override
                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                         classId = classDropdowns.get(i).getId();
+                        fallbackData();
                         Call<List<DivisonDropDown>> call = RetrofitClient.getInstance().getMyApi().getDivisionDropDown(classDropdowns.get(i).getId());
                         call.enqueue(new Callback<List<DivisonDropDown>>() {
                             @Override
@@ -135,6 +199,7 @@ public class GalleryFragment extends Fragment {
                                     @Override
                                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                                         divisonId = divisonDropDowns.get(i).getId();
+                                        fallbackData();
                                         Call<List<SubjectModel>> call = RetrofitClient.getInstance().getMyApi().getSubjectDropDown(HomeActivity.teacherId);
                                         call.enqueue(new Callback<List<SubjectModel>>() {
                                             @Override
@@ -151,6 +216,7 @@ public class GalleryFragment extends Fragment {
                                                     @Override
                                                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                                                         subjectId = subjectModels.get(i).getId();
+                                                        fallbackData();
                                                     }
 
                                                     @Override
@@ -196,6 +262,19 @@ public class GalleryFragment extends Fragment {
         return root;
     }
 
+    @SuppressLint("MissingPermission")
+    private void fallbackData(){
+        binding.scanDevices.setText("Scan Devices");
+        binding.takeAttendance.setText("Mark Attendance");
+        binding.status.setVisibility(View.INVISIBLE);
+        binding.takeAttendance.setEnabled(false);
+        bluetoothIds.clear();
+        if(takeAttendanceAdapter!=null) takeAttendanceAdapter.clearAll();
+        if(countDownTimer!=null) countDownTimer.cancel();
+        if(mBluetoothAdapter!=null && mBluetoothAdapter.isDiscovering())
+            mBluetoothAdapter.cancelDiscovery();
+    }
+
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -211,24 +290,22 @@ public class GalleryFragment extends Fragment {
                 @SuppressLint("MissingPermission") String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
                 if(bluetoothIds.isEmpty()){
-                    new CountDownTimer(20000, 1000) {
+                    countDownTimer = new CountDownTimer(20000, 1000) {
 
                         public void onTick(long millisUntilFinished) {
 
                         }
 
                         public void onFinish() {
-                            scannedDevices = true;
-                            binding.scanDevices.setText("Mark Attendance");
+                            binding.scanDevices.setText("Rescan Devices");
+                            binding.takeAttendance.setEnabled(true);
                             Toast.makeText(context, "Scanning Completed", Toast.LENGTH_SHORT).show();
                         }
-                    }.start();
+                    };
+                    countDownTimer.start();
                     Toast.makeText(context, "Started Scanning", Toast.LENGTH_SHORT).show();
                 }
                 if(!bluetoothIds.contains(deviceHardwareAddress)){
-                    temp = temp.concat("\n"+ i + " - " + deviceName + " " +deviceHardwareAddress);
-                    i++;
-                    binding.bluetoothId.setText(temp);
                     bluetoothIds.add(deviceHardwareAddress);
                 }
             }

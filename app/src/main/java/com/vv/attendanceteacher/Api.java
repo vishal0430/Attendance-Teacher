@@ -4,6 +4,7 @@ import com.vv.attendanceteacher.models.AttendanceStatusModel;
 import com.vv.attendanceteacher.models.ClassDropdown;
 import com.vv.attendanceteacher.models.DivisonDropDown;
 import com.vv.attendanceteacher.models.LoginModel;
+import com.vv.attendanceteacher.models.ShowAttendanceModel;
 import com.vv.attendanceteacher.models.SubjectModel;
 
 import org.json.JSONArray;
@@ -38,4 +39,11 @@ public interface Api {
     @FormUrlEncoded
     @POST("?takeattendance")
     Call<AttendanceStatusModel> takeAttendance(@Query("class_id") String classId,@Query("classdivision_id") String classdivsionId,@Query("date") String date,@Query("subject_id") String subjectId,@Field("studentId") JSONArray studentIds);
+
+    @FormUrlEncoded
+    @POST("?updateattendance")
+    Call<AttendanceStatusModel> updateAttendance(@Query("class_id") String classId,@Query("classdivision_id") String classdivsionId,@Query("date") String date,@Query("subject_id") String subjectId,@Field("studentId") JSONArray studentIds);
+
+    @POST("?showattendance")
+    Call<List<ShowAttendanceModel>> showAttendance(@Query("class_id") String classId, @Query("classdivision_id") String classdivsionId, @Query("date") String date, @Query("subject_id") String subjectId);
 }

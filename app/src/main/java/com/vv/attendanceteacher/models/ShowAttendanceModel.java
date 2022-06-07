@@ -1,19 +1,21 @@
 package com.vv.attendanceteacher.models;
 
 public class ShowAttendanceModel {
-    private String id;
+    private String Id;
     private String admissionNo;
     private String classId;
     private String classArmId;
-    private String sessionTermId;
     private String status;
     private String dateTimeTaken;
     private String assignSubjectId;
+    private String firstName;
+    private String lastName;
+    private String admissionNumber;
     public String getId() {
-        return id;
+        return Id;
     }
     public void setId(String id) {
-        this.id = id;
+        this.Id = id;
     }
     public String getAdmissionNo() {
         return admissionNo;
@@ -33,12 +35,6 @@ public class ShowAttendanceModel {
     public void setClassArmId(String classArmId) {
         this.classArmId = classArmId;
     }
-    public String getSessionTermId() {
-        return sessionTermId;
-    }
-    public void setSessionTermId(String sessionTermId) {
-        this.sessionTermId = sessionTermId;
-    }
     public String getStatus() {
         return status;
     }
@@ -56,5 +52,23 @@ public class ShowAttendanceModel {
     }
     public void setAssignSubjectId(String assignSubjectId) {
         this.assignSubjectId = assignSubjectId;
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+    public String getLastName() {
+        return lastName;
+    }
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+    public String getAdmissionNumber() {
+        return admissionNumber;
+    }
+    public void setAdmissionNumber(String admissionNumber) {
+        this.admissionNumber = admissionNumber;
     }
 }
