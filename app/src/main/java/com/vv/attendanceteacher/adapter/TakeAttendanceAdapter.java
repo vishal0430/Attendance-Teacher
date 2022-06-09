@@ -47,7 +47,7 @@ public class TakeAttendanceAdapter extends RecyclerView.Adapter<TakeAttendanceAd
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.rollNo.setText(listdata.get(position).getAdmissionNumber());
+        holder.rollNo.setText(listdata.get(position).getRollNo());
         holder.sName.setText(listdata.get(position).getFirstName() +" "+listdata.get(position).getLastName());
         holder.checkBox.setChecked(listdata.get(position).getStatus().equals("1"));
 

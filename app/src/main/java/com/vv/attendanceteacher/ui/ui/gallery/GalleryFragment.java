@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -62,7 +64,7 @@ public class GalleryFragment extends Fragment {
     private FragmentGalleryBinding binding;
     ArrayList<String> bluetoothIds = new ArrayList<>();
     ArrayList<String> rollNos = new ArrayList<>();
-    BluetoothAdapter mBluetoothAdapter;
+//    BluetoothAdapter mBluetoothAdapter;
     String classId;
     String divisonId;
     String subjectId;
@@ -71,6 +73,7 @@ public class GalleryFragment extends Fragment {
 
     CountDownTimer countDownTimer;
     RecyclerView recyclerView;
+    WifiManager wifiManager;
     TakeAttendanceAdapter takeAttendanceAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -101,6 +104,14 @@ public class GalleryFragment extends Fragment {
 
         takeAttendance.setEnabled(false);
 
+
+        wifiManager = (WifiManager)
+                getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        getContext().registerReceiver(wifiScanReceiver, intentFilter);
+
         DatePickerDialog.OnDateSetListener date =new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int day) {
@@ -125,13 +136,14 @@ public class GalleryFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if(!displayDate.getText().toString().isEmpty()) {
-                    if (mBluetoothAdapter == null)
-                        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                    if (!mBluetoothAdapter.isDiscovering()) {
-                        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-                        getContext().registerReceiver(receiver, filter);
-                        mBluetoothAdapter.startDiscovery();
-                    }
+//                    if (mBluetoothAdapter == null)
+//                        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//                    if (!mBluetoothAdapter.isDiscovering()) {
+//                        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+//                        getContext().registerReceiver(receiver, filter);
+//                        mBluetoothAdapter.startDiscovery();
+//                    }
+                    wifiManager.startScan();
                 }else
                     Toast.makeText(getContext(), "Select Date", Toast.LENGTH_SHORT).show();
             }
@@ -142,7 +154,7 @@ public class GalleryFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 /// Upload Data
-                if(!mBluetoothAdapter.isDiscovering()) {
+//                if(!mBluetoothAdapter.isDiscovering()) {
                     if(!displayDate.getText().toString().isEmpty()) {
                         if (updateAttendance) {
                             rollNos.clear();
@@ -166,7 +178,7 @@ public class GalleryFragment extends Fragment {
                             });
                         } else {
                             Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().takeAttendance(classId, divisonId, displayDate.getText().toString(), subjectId, new JSONArray(bluetoothIds));
-                            Toast.makeText(getContext(), bluetoothIds.toString(), Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(getContext(), bluetoothIds.toString(), Toast.LENGTH_SHORT).show();
                             call.enqueue(new Callback<AttendanceStatusModel>() {
                                 @Override
                                 public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
@@ -199,9 +211,9 @@ public class GalleryFragment extends Fragment {
                         }
                     }else
                         Toast.makeText(getContext(), "Select Date", Toast.LENGTH_SHORT).show();
-                }else{
-                    Toast.makeText(getContext(), "Please Wait for Scanning to Complete !!", Toast.LENGTH_SHORT).show();
-                }
+//                }else{
+//                    Toast.makeText(getContext(), "Please Wait for Scanning to Complete !!", Toast.LENGTH_SHORT).show();
+//                }
             }
         });
 
@@ -312,10 +324,27 @@ public class GalleryFragment extends Fragment {
         updateAttendance = false;
         if(takeAttendanceAdapter!=null) takeAttendanceAdapter.clearAll();
         if(countDownTimer!=null) countDownTimer.cancel();
-        if(mBluetoothAdapter!=null && mBluetoothAdapter.isDiscovering())
-            mBluetoothAdapter.cancelDiscovery();
+//        if(mBluetoothAdapter!=null && mBluetoothAdapter.isDiscovering())
+//            mBluetoothAdapter.cancelDiscovery();
     }
 
+
+    BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent intent) {
+                scanSuccess();
+        }
+    };
+
+    private void scanSuccess() {
+        bluetoothIds.clear();
+        List<ScanResult> results = wifiManager.getScanResults();
+        Toast.makeText(getContext(), "Found " + results.size(), Toast.LENGTH_SHORT).show();
+        for(ScanResult scanResult : results){
+            bluetoothIds.add(scanResult.BSSID.toUpperCase(Locale.ROOT));
+        }
+        binding.takeAttendance.setEnabled(true);
+    }
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -361,7 +390,7 @@ public class GalleryFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if(receiver.isOrderedBroadcast()) {
-            mBluetoothAdapter.cancelDiscovery();
+//            mBluetoothAdapter.cancelDiscovery();
             getContext().unregisterReceiver(receiver);
         }
         binding = null;

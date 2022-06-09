@@ -11,6 +11,7 @@ public class ShowAttendanceModel {
     private String firstName;
     private String lastName;
     private String admissionNumber;
+    private String rollNo;
     public String getId() {
         return Id;
     }
@@ -70,5 +71,11 @@ public class ShowAttendanceModel {
     }
     public void setAdmissionNumber(String admissionNumber) {
         this.admissionNumber = admissionNumber;
+    }
+    public String getRollNo() {
+        return rollNo;
+    }
+    public void setRollNo(String rollNo) {
+        this.rollNo = rollNo;
     }
 }
