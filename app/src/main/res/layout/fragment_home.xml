@@ -7,17 +7,15 @@
     android:orientation="vertical"
     tools:context=".ui.ui.home.HomeFragment">
 
-    <include
-        layout="@layout/home_card"
-        android:id="@+id/card_students"/>
-    <include
-        layout="@layout/home_card"
-        android:id="@+id/card_totalClasses"/>
-    <include
-        layout="@layout/home_card"
-        android:id="@+id/card_totalClassDivision"/>
-    <include
-        layout="@layout/home_card"
-        android:id="@+id/card_totalAttendance"/>
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/dashboardLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 </LinearLayout>

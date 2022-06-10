@@ -31,6 +31,9 @@ public interface Api {
     @GET("?teacherdetails")
     Call<TeacherDetailsModel> getTeacherDetails(@Query("teacherid") String teacherId);
 
+    @GET("?teacherDashboard")
+    Call<List<List<String>>> getTeacherDashboard(@Query("teacher_id") String teacherId);
+
     @GET("?class")
     Call<List<ClassDropdown>> getClassDropDown(@Query("teacher_id") String teacherId);
 
