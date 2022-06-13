@@ -68,20 +68,24 @@ public class UpdateStudentIdFragment extends Fragment {
         upload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                for(String str : arrayList) {
-                    String[] temp = str.split("-");
-                    Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().updateWifi(temp[0].trim(),temp[1].trim().toUpperCase(Locale.ROOT));
-                    call.enqueue(new Callback<AttendanceStatusModel>() {
-                        @Override
-                        public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
-                            Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
+                if(arrayList.size()!=0) {
+                    for (String str : arrayList) {
+                        String[] temp = str.split("-");
+                        Call<AttendanceStatusModel> call = RetrofitClient.getInstance().getMyApi().updateWifi(temp[0].trim(), temp[1].trim().toUpperCase(Locale.ROOT));
+                        call.enqueue(new Callback<AttendanceStatusModel>() {
+                            @Override
+                            public void onResponse(Call<AttendanceStatusModel> call, Response<AttendanceStatusModel> response) {
+                                Toast.makeText(getContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
 
-                        @Override
-                        public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
-                            Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                            @Override
+                            public void onFailure(Call<AttendanceStatusModel> call, Throwable t) {
+                                Toast.makeText(getContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }else{
+                    Toast.makeText(getContext(), "Scan for devices First", Toast.LENGTH_SHORT).show();
                 }
             }
         });
