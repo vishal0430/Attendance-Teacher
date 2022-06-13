@@ -1,8 +1,7 @@
-package com.vv.attendanceteacher.ui.ui.gallery;
+package com.vv.attendanceteacher.ui.ui.takeattendance;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -26,12 +25,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.gson.JsonArray;
-import com.vv.attendanceteacher.MainActivity;
 import com.vv.attendanceteacher.RetrofitClient;
 import com.vv.attendanceteacher.adapter.TakeAttendanceAdapter;
 import com.vv.attendanceteacher.databinding.FragmentGalleryBinding;
@@ -50,16 +46,12 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import org.json.JSONArray;
-import org.w3c.dom.Text;
 
-import java.util.Arrays;
+import org.json.JSONArray;
+
 import java.util.Locale;
 
-import retrofit2.converter.gson.GsonConverterFactory;
-
-public class GalleryFragment extends Fragment {
+public class TakeAttendanceFragment extends Fragment {
 
     private FragmentGalleryBinding binding;
     ArrayList<String> bluetoothIds = new ArrayList<>();
@@ -78,8 +70,6 @@ public class GalleryFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        GalleryViewModel galleryViewModel =
-                new ViewModelProvider(this).get(GalleryViewModel.class);
 
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();

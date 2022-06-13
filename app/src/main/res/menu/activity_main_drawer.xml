@@ -9,8 +9,18 @@
             android:icon="@drawable/ic_baseline_dashboard_24"
             android:title="@string/menu_home" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_takeAttendance"
             android:icon="@drawable/ic_baseline_person_search_24"
-            android:title="@string/menu_gallery" />
+            android:title="@string/menu_take" />
+
+        <item
+            android:id="@+id/nav_showAttendance"
+            android:icon="@drawable/ic_baseline_pageview_24"
+            android:title="@string/menu_show" />
+
+        <item
+            android:id="@+id/nav_updateStudent"
+            android:icon="@drawable/ic_baseline_border_color_24"
+            android:title="@string/menu_update" />
     </group>
 </menu>

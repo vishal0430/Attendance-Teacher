@@ -12,9 +12,21 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="com.vv.attendanceteacher.ui.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
+        android:id="@+id/nav_takeAttendance"
+        android:name="com.vv.attendanceteacher.ui.ui.takeattendance.TakeAttendanceFragment"
+        android:label="@string/menu_take"
         tools:layout="@layout/fragment_gallery" />
+
+    <fragment
+        android:id="@+id/nav_showAttendance"
+        android:name="com.vv.attendanceteacher.ui.ui.showattendance.ShowAttendanceFragment"
+        android:label="@string/menu_show"
+        tools:layout="@layout/fragment_slideshow" />
+
+    <fragment
+        android:id="@+id/nav_updateStudent"
+        android:name="com.vv.attendanceteacher.ui.ui.update.UpdateStudentIdFragment"
+        android:label="@string/menu_update"
+        tools:layout="@layout/fragment_update_student_id" />
 
 </navigation>

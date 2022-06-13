@@ -53,4 +53,7 @@ public interface Api {
 
     @POST("?showattendance")
     Call<List<ShowAttendanceModel>> showAttendance(@Query("class_id") String classId, @Query("classdivision_id") String classdivsionId, @Query("date") String date, @Query("subject_id") String subjectId);
+    
+    @GET("?studentWifiUpdate")
+    Call<AttendanceStatusModel> updateWifi(@Query("rollNo") String email, @Query("wifi") String password);
 }
