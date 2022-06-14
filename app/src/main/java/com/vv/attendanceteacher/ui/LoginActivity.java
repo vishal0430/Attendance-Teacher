@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.vv.attendanceteacher.DataStore;
@@ -24,6 +25,7 @@ public class LoginActivity extends AppCompatActivity {
 
     EditText email,pass;
     Button submit;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,8 @@ public class LoginActivity extends AppCompatActivity {
         email = findViewById(R.id.email);
         pass = findViewById(R.id.password);
         submit = findViewById(R.id.submit);
+        progressBar = findViewById(R.id.progressBarLogin);
+        progressBar.setVisibility(View.GONE);
 
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -43,11 +47,13 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void login() {
+        progressBar.setVisibility(View.VISIBLE);
         Call<LoginModel> call = RetrofitClient.getInstance().getMyApi().loginTeacher(email.getText().toString(),pass.getText().toString());
         call.enqueue(new Callback<LoginModel>() {
             @Override
             public void onResponse(Call<LoginModel> call, Response<LoginModel> response) {
                 LoginModel loginModel = response.body();
+                progressBar.setVisibility(View.GONE);
                 if(loginModel.getStatus().equals("1")){
                     MainActivity.sharedPreferences.edit().putBoolean(DataStore.LOGIN_STATUS,true).apply();
                     MainActivity.sharedPreferences.edit().putString(DataStore.TEACHER_ID,loginModel.getId()).apply();
@@ -60,6 +66,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<LoginModel> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
                 Toast.makeText(LoginActivity.this, "Something Went Wrong !!"+t.toString(), Toast.LENGTH_SHORT).show();
             }
         });
